@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # coding: utf-8
 # Copyright 2016 Abram Hindle, https://github.com/tywtyw2002, and https://github.com/treedust
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -41,17 +41,21 @@ class HTTPClient(object):
         return None
 
     def get_code(self, data):
-        return None
+        list = data.split()
+        return int(list[1])
 
     def get_headers(self,data):
-        return None
+        list = data.split("\r\n\r\n")
+        return list[0]
 
     def get_body(self, data):
-        return None
-    
+        list = data.split("\r\n\r\n")
+        length = len(list) - 1
+        return list[length]
+
     def sendall(self, data):
         self.socket.sendall(data.encode('utf-8'))
-        
+
     def close(self):
         self.socket.close()
 
@@ -68,21 +72,57 @@ class HTTPClient(object):
         return buffer.decode('utf-8')
 
     def GET(self, url, args=None):
-        code = 500
-        body = ""
+        components = urllib.parse.urlparse(url)
+        # get all the info
+        host = components.hostname
+        port = components.port
+        path = components.path
+        if (port is None):
+            port = 80
+        if (path is ""):
+            path = "/"
+        self.connect(host,port)
+        request = '''GET {path} HTTP/1.1\r\nHost: {host}\r\nConnection: close\r\n\r\n'''.format(path = path, host = host)
+        self.sendall(request)
+        data = self.recvall(self.socket)
+        code = self.get_code(data)
+        body = self.get_body(data)
+        self.close()
         return HTTPResponse(code, body)
 
     def POST(self, url, args=None):
-        code = 500
-        body = ""
+        components = urllib.parse.urlparse(url)
+        # get all the info
+        host = components.hostname
+        port = components.port
+        path = components.path
+        if (port is None):
+            port = 80
+        if (path is ""):
+            path = "/"
+        self.connect(host,port)
+        if args:
+            content = urllib.parse.urlencode(args)
+        else:
+            content=''
+        length = len(content)
+        req = '''POST {path} HTTP/1.1\r\nHost: {host}\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: {length}\r\nConnection: close\r\n\r\n{content}'''.format(path = path, host = host, length = length, content = content)
+        self.sendall(req)
+        # get data
+        data = self.recvall(self.socket)
+        code = self.get_code(data)
+        body = self.get_body(data)
+        self.close()
         return HTTPResponse(code, body)
 
     def command(self, url, command="GET", args=None):
         if (command == "POST"):
+            print(url)
             return self.POST( url, args )
         else:
+            print(url)
             return self.GET( url, args )
-    
+
 if __name__ == "__main__":
     client = HTTPClient()
     command = "GET"
