@@ -24,9 +24,12 @@ Reference
 ========================
 
 https://pymotw.com/3/urllib.parse/ learn about how to use the urllib.parse.urlparse() to split urls into components and how to get each parts by named attributes.
+https://www.networkwebcams.co.uk/blog/2010/02/17/network-port-and-why-do-i-need-one/ learn about when I can not get a port from the url what I can set for it
 
 Study Buddy
 ========================
 
 Tianqi Wang
+
+
 Yuanmao Zhu
