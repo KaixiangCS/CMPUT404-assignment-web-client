@@ -41,17 +41,25 @@ class HTTPClient(object):
         return None
 
     def get_code(self, data):
+        # an example of returns if using the list.split
+        # ['HTTP/1.0', '200', 'OK', 'Server:', 'BaseHTTP/0.6', 'Python/3.7.3', 'Date:', 'Fri,', '07', 'Feb', '2020', '00:36:35', 'GMT', 'Content-type:', 'application/json', '[]']
+        # So obviously the second one is what we need so return list[1]
         list = data.split()
         return int(list[1])
 
     def get_headers(self,data):
+        # note that the ("\r\n\r\n") divide the header and body
+        # so if using data.split("\r\n\r\n") it will be splitted to [header,body]
+        # so here since ask for the header so we need the first element of the list
+        # which will return list[0]
         list = data.split("\r\n\r\n")
         return list[0]
 
     def get_body(self, data):
+        # The final part of the request is its body.
+        # here the next one will be the body so we return list[-1]
         list = data.split("\r\n\r\n")
-        length = len(list) - 1
-        return list[length]
+        return list[-1]
 
     def sendall(self, data):
         self.socket.sendall(data.encode('utf-8'))
@@ -72,43 +80,56 @@ class HTTPClient(object):
         return buffer.decode('utf-8')
 
     def GET(self, url, args=None):
-        components = urllib.parse.urlparse(url)
-        # get all the info
-        host = components.hostname
-        port = components.port
-        path = components.path
-        if (port is None):
+        # using urllib.parse.urlparse(url) to split urls into componets
+        host = urllib.parse.urlparse(url).hostname
+        # set the port to 80 since some times the url's components does not contain a port
+        # for example in testInternetGets "http://www.cs.ualberta.ca/"
+        # since "All websites on the Internet use port 80 so rather than have you type this in all the time"
+        # set port = 80 when cant get port from the url
+        if (urllib.parse.urlparse(url).port is None):
             port = 80
-        if (path is ""):
+        else:
+            port = urllib.parse.urlparse(url).port
+        # set the path to "/" since some of the urls do not contain a path
+        # for example in testInternetGets "http://slashdot.org"
+        # set "/" as path when path is none
+        if (urllib.parse.urlparse(url).path is ""):
             path = "/"
+        else:
+            path = urllib.parse.urlparse(url).path
+        # start connecting
         self.connect(host,port)
         request = '''GET {path} HTTP/1.1\r\nHost: {host}\r\nConnection: close\r\n\r\n'''.format(path = path, host = host)
         self.sendall(request)
         data = self.recvall(self.socket)
+        #print("......")
+        #print(data)
+        #print("......")
         code = self.get_code(data)
         body = self.get_body(data)
+        # it will return a warning about unclosed socket.
         self.close()
         return HTTPResponse(code, body)
 
     def POST(self, url, args=None):
-        components = urllib.parse.urlparse(url)
-        # get all the info
-        host = components.hostname
-        port = components.port
-        path = components.path
-        if (port is None):
+        host = urllib.parse.urlparse(url).hostname
+        if (urllib.parse.urlparse(url).port is None):
             port = 80
-        if (path is ""):
+        else:
+            port = urllib.parse.urlparse(url).port
+        if (urllib.parse.urlparse(url).path is ""):
             path = "/"
+        else:
+            path = urllib.parse.urlparse(url).path
         self.connect(host,port)
         if args:
+            #Use the urllib.parse.urlencode() function (with the doseq parameter set to True) to convert such dictionaries into query strings.
             content = urllib.parse.urlencode(args)
         else:
             content=''
         length = len(content)
         req = '''POST {path} HTTP/1.1\r\nHost: {host}\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: {length}\r\nConnection: close\r\n\r\n{content}'''.format(path = path, host = host, length = length, content = content)
         self.sendall(req)
-        # get data
         data = self.recvall(self.socket)
         code = self.get_code(data)
         body = self.get_body(data)
@@ -117,10 +138,10 @@ class HTTPClient(object):
 
     def command(self, url, command="GET", args=None):
         if (command == "POST"):
-            print(url)
+            #print(url)
             return self.POST( url, args )
         else:
-            print(url)
+            #print(url)
             return self.GET( url, args )
 
 if __name__ == "__main__":
