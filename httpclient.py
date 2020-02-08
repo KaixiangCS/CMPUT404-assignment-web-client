@@ -129,7 +129,7 @@ class HTTPClient(object):
             content=''
         length = len(content.encode('utf-8'))
         request = '''POST {path} HTTP/1.1\r\nHost: {host}\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: {length}\r\nConnection: close\r\n\r\n{content}'''.format(path = path, host = host, length = length, content = content)
-        self.sendall(req)
+        self.sendall(request)
         data = self.recvall(self.socket)
         code = self.get_code(data)
         body = self.get_body(data)
